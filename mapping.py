@@ -1176,7 +1176,7 @@ def augment_with_manual_pairs(
             haversine_km(s_lat, s_lon, np.array([p_lat]), np.array([p_lon]))[0]
         )
 
-        acc_m = float(prow.get("max_accuracy_meters", 0.0) or 0.0)
+        acc_m = float(prow.get("max_accuracy_m", 0.0) or 0.0)
         acc_km = acc_m / 1000.0
         d_eff = max(0.0, d_km - acc_km)
 
@@ -1234,7 +1234,7 @@ def augment_with_manual_pairs(
                 "pleiades_earliest_year": prow.get("earliest_year"),
                 "pleiades_latest_year": prow.get("latest_year"),
                 "pleiades_location_precision": prow.get("location_precision"),
-                "pleiades_max_accuracy_meters": prow.get("max_accuracy_meters"),
+                "pleiades_max_accuracy_m": prow.get("max_accuracy_m"),
                 "distance_km": d_km,
                 "distance_eff_km": d_eff,
                 "geo_score": float(geo),
@@ -1333,6 +1333,12 @@ def write_outputs(
         json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     log(f"Wrote JSON: {json_path}")
+
+    # Optional: HTML view of the JSON summary (per-site candidate tables)
+    try:
+        write_summary_table_html(json_path, out_dir / f"{prefix}_summary.html")
+    except Exception as e:
+        log(f"WARN: Could not write summary HTML: {e}")
 
     # Convenience: top-1 per samian
     top1 = (
@@ -1550,7 +1556,7 @@ def write_outputs(
         ax.set_xlabel("final_score")
         ax.set_ylabel("count")
         ax.set_title("STL-PA: distribution of final scores")
-        fig_path = out_dir / ""
+        fig_path = out_dir / f"{prefix}_final_score_hist.jpg"
         fig.savefig(fig_path, dpi=300, bbox_inches="tight")
         plt.close(fig)
         log(f"Wrote plot: {fig_path}")
@@ -1563,7 +1569,7 @@ def write_outputs(
         ax.set_xlabel("confidence")
         ax.set_ylabel("count")
         ax.set_title("STL-PA: confidence class counts")
-        fig_path = out_dir / ""
+        fig_path = out_dir / f"{prefix}_confidence_counts.jpg"
         fig.savefig(fig_path, dpi=300, bbox_inches="tight")
         plt.close(fig)
         log(f"Wrote plot: {fig_path}")
@@ -1837,8 +1843,11 @@ def write_outputs(
       <h2>Plots</h2>
       <p class="small muted">Files are referenced relatively (same output folder).</p>
       <h3>Final score distribution</h3>
+      <img src="{prefix}_final_score_hist.jpg" alt="Histogram of final scores"/>
       <h3>Confidence class counts</h3>
+      <img src="{prefix}_confidence_counts.jpg" alt="Confidence class counts"/>
       <h3>Top-1 final score distribution</h3>
+      <img src="{prefix}_top1_final_score_hist.jpg" alt="Histogram of Top-1 final scores"/>
       <h3>Top-1: geo contribution vs final score</h3>
       <img src="{prefix}_top1_geo_contrib_vs_final.jpg" alt="Scatter of geo contribution vs final score (top-1)"/>
       <h3>Top-1: string contribution vs final score</h3>
