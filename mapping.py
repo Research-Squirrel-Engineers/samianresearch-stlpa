@@ -583,27 +583,71 @@ def string_similarity(a: str, b: str) -> float:
 
 def best_string_score(
     samian_label: str, samian_alts: str, pleiades_label: str, pleiades_alts: str
-) -> float:
-    s_names = [_norm_name(samian_label)] + [
-        _norm_name(x) for x in split_pipe(samian_alts)
-    ]
-    p_names = [_norm_name(pleiades_label)] + [
-        _norm_name(x) for x in split_pipe(pleiades_alts)
-    ]
+) -> Tuple[float, str]:
+    """Best string similarity in [0,1] + a small provenance tag.
 
-    # remove empties and duplicates while keeping small list sizes
-    s_names = [x for x in dict.fromkeys([x for x in s_names if x])]
-    p_names = [x for x in dict.fromkeys([x for x in p_names if x])]
+    Why this exists:
+    - In Pleiades, many places have rich alternative labels (names.csv).
+    - In Samian Research, the *site label* is usually the dominant identifier.
+
+    For production-site alignment we therefore *prefer matches involving the primary labels*.
+    Otherwise, a place where the correct label appears only as an alternative name can
+    wrongly beat the intended place (classic case: *La Graufesenque* vs nearby places).
+
+    Strategy:
+    - Compute similarities for label↔label, label↔alt, alt↔label, alt↔alt.
+    - Apply a mild penalty when the best match relies on alternative labels.
+
+    Returns:
+      (score, mode)
+      mode ∈ {"label-label", "label-alt", "alt-label", "alt-alt"}
+    """
+
+    s_label = _norm_name(samian_label)
+    p_label = _norm_name(pleiades_label)
+    s_alts = [_norm_name(x) for x in split_pipe(samian_alts)]
+    p_alts = [_norm_name(x) for x in split_pipe(pleiades_alts)]
+
+    # remove empties and duplicates while keeping lists small
+    s_alts = [x for x in dict.fromkeys([x for x in s_alts if x])]
+    p_alts = [x for x in dict.fromkeys([x for x in p_alts if x])]
 
     best = 0.0
-    for a in s_names:
-        for b in p_names:
-            sc = string_similarity(a, b)
-            if sc > best:
-                best = sc
-                if best >= 0.999:
-                    return 1.0
-    return best
+    best_mode = "alt-alt"
+
+    # 1) label-label (no penalty)
+    if s_label and p_label:
+        sc = string_similarity(s_label, p_label)
+        if sc > best:
+            best, best_mode = sc, "label-label"
+            if best >= 0.999:
+                return 1.0, best_mode
+
+    # 2) label-alt (mild penalty)
+    if s_label and p_alts:
+        sc = max(string_similarity(s_label, b) for b in p_alts)
+        sc *= 0.97
+        if sc > best:
+            best, best_mode = sc, "label-alt"
+
+    # 3) alt-label (mild penalty)
+    if p_label and s_alts:
+        sc = max(string_similarity(a, p_label) for a in s_alts)
+        sc *= 0.97
+        if sc > best:
+            best, best_mode = sc, "alt-label"
+
+    # 4) alt-alt (stronger penalty)
+    if s_alts and p_alts:
+        sc = 0.0
+        for a in s_alts:
+            for b in p_alts:
+                sc = max(sc, string_similarity(a, b))
+        sc *= 0.94
+        if sc > best:
+            best, best_mode = sc, "alt-alt"
+
+    return float(best), best_mode
 
 
 def haversine_km(
@@ -678,9 +722,13 @@ class STLPAParams:
     dynamic_w_geo_min: float = 0.2
 
     # Fusion weights (base)
-    w_geo: float = 0.5
-    w_str: float = 0.4
-    w_time: float = 0.1
+    # Samian / production-site tuned defaults:
+    # - string similarity is the dominant signal
+    # - geo is primarily plausibility (used with a soft-cap in scoring)
+    # - time is coarse era gating (Time-A), not fine discrimination
+    w_geo: float = 0.25
+    w_str: float = 0.65
+    w_time: float = 0.10
 
     # Confidence thresholds
     high_conf: float = 0.75
@@ -803,7 +851,9 @@ def run_stlpa(
             if str(P_prec[j]).strip().lower() == "rough":
                 geo *= float(p.rough_penalty)
 
-            str_sc = best_string_score(s_label, s_alts, str(P_label[j]), str(P_alts[j]))
+            str_sc, str_mode = best_string_score(
+                s_label, s_alts, str(P_label[j]), str(P_alts[j])
+            )
 
             t_sc = time_score(
                 srow["earliest_year"],
@@ -819,7 +869,9 @@ def run_stlpa(
                 w_geo, w_str, w_time, acc_km, p
             )
 
-            geo_contrib = w_geo_l * geo
+            # Soft cap (string-prioritised): geo can only help if string similarity is at least modest
+            geo_factor = geo * min(1.0, float(str_sc) + 0.2)
+            geo_contrib = w_geo_l * geo_factor
             str_contrib = w_str_l * str_sc
             time_contrib = w_time_l * t_sc
             final = geo_contrib + str_contrib + time_contrib
@@ -830,7 +882,9 @@ def run_stlpa(
                     d_km,
                     d_eff,
                     geo,
+                    geo_factor,
                     str_sc,
+                    str_mode,
                     t_sc,
                     w_geo_l,
                     w_str_l,
@@ -849,7 +903,9 @@ def run_stlpa(
             d_km,
             d_eff,
             geo,
+            geo_factor,
             str_sc,
+            str_mode,
             t_sc,
             w_geo_l,
             w_str_l,
@@ -888,7 +944,9 @@ def run_stlpa(
                     "distance_km": float(d_km),
                     "distance_eff_km": float(d_eff),
                     "geo_score": float(geo),
+                    "geo_factor": float(geo_factor),
                     "string_score": float(str_sc),
+                    "string_mode": str(str_mode),
                     "time_score": float(t_sc),
                     "w_geo": float(w_geo_l),
                     "w_str": float(w_str_l),

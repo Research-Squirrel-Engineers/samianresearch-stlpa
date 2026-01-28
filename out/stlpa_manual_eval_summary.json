@@ -2,13 +2,13 @@
   "n_total_samian_in_manual_file": 240,
   "n_with_manual_pleiades": 96,
   "n_with_prediction": 239,
-  "n_correct_top1": 80,
-  "accuracy_top1_over_manual": 0.8333333333333334,
+  "n_correct_top1": 82,
+  "accuracy_top1_over_manual": 0.8541666666666666,
   "n_manual_present_in_candidates": 89,
   "status_counts": {
     "no_manual": 144,
-    "match": 80,
-    "mismatch": 9,
-    "manual_not_in_candidates": 7
+    "match": 82,
+    "manual_not_in_candidates": 7,
+    "mismatch": 7
   }
 }
