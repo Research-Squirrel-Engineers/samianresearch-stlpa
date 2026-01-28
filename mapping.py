@@ -866,6 +866,9 @@ def run_stlpa(
                     "string_contrib": float(str_contrib),
                     "time_contrib": float(time_contrib),
                     "final_score": float(final),
+                    "geo_rel": float(geo_contrib / final) if final > 0 else 0.0,
+                    "string_rel": float(str_contrib / final) if final > 0 else 0.0,
+                    "time_rel": float(time_contrib / final) if final > 0 else 0.0,
                     "rank": int(rank),
                     "confidence": confidence_label(float(final), p),
                 }
@@ -988,7 +991,14 @@ def write_outputs(
         log(f"Wrote plot: {fig_path}")
 
         # Scatter: component contribution vs final_score (Top-1)
-        for col in ["geo_contrib", "string_contrib", "time_contrib"]:
+        for col in [
+            "geo_contrib",
+            "string_contrib",
+            "time_contrib",
+            "geo_rel",
+            "string_rel",
+            "time_rel",
+        ]:
             if col not in top1_sorted.columns:
                 continue
             fig = plt.figure()
@@ -996,6 +1006,9 @@ def write_outputs(
             ax.scatter(
                 top1_sorted[col].astype(float).to_numpy(),
                 top1_sorted["final_score"].astype(float).to_numpy(),
+                s=8,
+                alpha=0.6,
+                edgecolors="none",
             )
             ax.set_xlabel(col)
             ax.set_ylabel("final_score")
@@ -1252,19 +1265,22 @@ def parse_args() -> argparse.Namespace:
         help="Penalty factor for rough precision (default: 0.6).",
     )
     ap.add_argument(
-        "--w-geo", type=float, default=0.5, help="Weight for geo score (default: 0.5)."
+        "--w-geo",
+        type=float,
+        default=None,
+        help="Weight for geo score (default: from params).",
     )
     ap.add_argument(
         "--w-str",
         type=float,
-        default=0.3,
-        help="Weight for string score (default: 0.3).",
+        default=None,
+        help="Weight for string score (default: from params).",
     )
     ap.add_argument(
         "--w-time",
         type=float,
-        default=0.2,
-        help="Weight for time score (default: 0.2).",
+        default=None,
+        help="Weight for time score (default: from params).",
     )
     ap.add_argument(
         "--high-conf",
@@ -1275,8 +1291,8 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument(
         "--medium-conf",
         type=float,
-        default=0.50,
-        help="Medium-confidence threshold (default: 0.50).",
+        default=None,
+        help="Medium-confidence threshold (default: from params).",
     )
     ap.add_argument(
         "--out-dir", type=str, default="out", help="Output directory (default: ./out)."
@@ -1309,12 +1325,21 @@ def main() -> None:
         topk=int(args.topk),
         sigma_km=float(args.sigma_km),
         rough_penalty=float(args.rough_penalty),
-        w_geo=float(args.w_geo),
-        w_str=float(args.w_str),
-        w_time=float(args.w_time),
         high_conf=float(args.high_conf),
-        medium_conf=float(args.medium_conf),
     )
+
+    # Optional CLI overrides (keep params as single source of truth by default)
+    if args.w_geo is not None:
+        params.w_geo = float(args.w_geo)
+    if args.w_str is not None:
+        params.w_str = float(args.w_str)
+    if args.w_time is not None:
+        params.w_time = float(args.w_time)
+    if args.medium_conf is not None:
+        params.medium_conf = float(args.medium_conf)
+
+    # Normalise weights to sum to 1.0 (safety; keeps ratios)
+    params.w_geo, params.w_str, params.w_time = normalise_weights(params)
 
     scored = run_stlpa(pleiades_view_df, samian_df, params)
 
