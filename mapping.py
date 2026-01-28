@@ -630,20 +630,67 @@ def time_score(
 
 @dataclass
 class STLPAParams:
-    radius_km: float = 50.0
+    # Candidate generation
+    radius_km: float = 50.0  # base radius
     topk: int = 25
+    adaptive_radius: bool = False
+    adaptive_km_per_year: float = 0.5
+    adaptive_radius_cap_km: float = 200.0
+
+    # Scoring
     sigma_km: float = 20.0
     rough_penalty: float = 0.6
+
+    # Dynamic weights ("2026+" variant)
+    dynamic_weights: bool = False
+    dynamic_acc_km_scale: float = 20.0
+    dynamic_w_geo_min: float = 0.2
+
+    # Fusion weights (base)
     w_geo: float = 0.5
     w_str: float = 0.3
     w_time: float = 0.2
+
+    # Confidence thresholds
     high_conf: float = 0.75
     medium_conf: float = 0.50
+
+    # Reporting
+    html_report: bool = True
 
 
 def normalise_weights(p: STLPAParams) -> Tuple[float, float, float]:
     s = max(1e-9, p.w_geo + p.w_str + p.w_time)
     return p.w_geo / s, p.w_str / s, p.w_time / s
+
+
+def clamp(x: float, lo: float, hi: float) -> float:
+    return max(lo, min(hi, x))
+
+
+def dynamic_fusion_weights(
+    w_geo: float, w_str: float, w_time: float, acc_km: float, p: STLPAParams
+) -> Tuple[float, float, float]:
+    """Adjust fusion weights based on Pleiades positional uncertainty.
+
+    Idea ("2026+" variant): if a Pleiades place is spatially uncertain (large accuracy),
+    then down-weight the geo component and re-distribute weight to string/time.
+    """
+    if not p.dynamic_weights:
+        return w_geo, w_str, w_time
+
+    scale = max(1e-9, float(p.dynamic_acc_km_scale))
+    a = clamp(acc_km / scale, 0.0, 1.0)
+
+    w_geo_adj = (w_geo * (1.0 - a)) + (float(p.dynamic_w_geo_min) * a)
+    w_geo_adj = clamp(w_geo_adj, 0.0, 1.0)
+
+    remaining = 1.0 - w_geo_adj
+    base_rest = max(1e-9, w_str + w_time)
+    w_str_adj = remaining * (w_str / base_rest)
+    w_time_adj = remaining * (w_time / base_rest)
+
+    return w_geo_adj, w_str_adj, w_time_adj
 
 
 def confidence_label(score: float, p: STLPAParams) -> str:
@@ -698,6 +745,11 @@ def run_stlpa(
 
         # Candidate selection: within radius, then take topk by distance
         radius = float(p.radius_km)
+        if p.adaptive_radius:
+            unc_int = pd.to_numeric(srow.get("unc_interval_years", 0), errors="coerce")
+            unc_int = 0.0 if pd.isna(unc_int) else float(unc_int)
+            radius = radius + float(p.adaptive_km_per_year) * unc_int
+            radius = min(radius, float(p.adaptive_radius_cap_km))
         idx = np.where(d_km_all <= radius)[0]
         if idx.size == 0:
             # fallback to top-k nearest overall
@@ -732,7 +784,10 @@ def run_stlpa(
                 None if (pd.isna(P_start[j]) or pd.isna(P_end[j])) else int(P_end[j]),
             )
 
-            final = (w_geo * geo) + (w_str * str_sc) + (w_time * t_sc)
+            w_geo_l, w_str_l, w_time_l = dynamic_fusion_weights(
+                w_geo, w_str, w_time, acc_km, p
+            )
+            final = (w_geo_l * geo) + (w_str_l * str_sc) + (w_time_l * t_sc)
 
             candidates.append((j, d_km, d_eff, geo, str_sc, t_sc, final))
 
@@ -874,6 +929,131 @@ def write_outputs(
     except Exception as e:
         log(f"Plotting skipped (matplotlib not available or failed): {e}")
 
+    # HTML report (self-contained; references local output files)
+    if params.html_report:
+        try:
+            n_pairs = len(df)
+            n_samian = df["samian_id"].nunique()
+            avg_cands = n_pairs / max(1, n_samian)
+
+            conf_counts = df["confidence"].value_counts().to_dict()
+
+            top1 = (
+                df.sort_values(["samian_id", "final_score"], ascending=[True, False])
+                .groupby("samian_id")
+                .head(1)
+                .sort_values("final_score", ascending=False)
+            )
+
+            def esc(s: str) -> str:
+                return (
+                    str(s)
+                    .replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace('"', "&quot;")
+                )
+
+            rows_html = []
+            for _, r in top1.head(50).iterrows():
+                rows_html.append(
+                    "<tr>"
+                    f"<td>{esc(r['samian_id'])}</td>"
+                    f"<td>{esc(r['samian_label'])}</td>"
+                    f"<td><a href='{esc(r['pleiades_uri'])}'>{esc(r['pleiades_id'])}</a></td>"
+                    f"<td>{esc(r['pleiades_label'])}</td>"
+                    f"<td>{float(r['distance_km']):.3f}</td>"
+                    f"<td>{float(r['geo_score']):.3f}</td>"
+                    f"<td>{float(r['string_score']):.3f}</td>"
+                    f"<td>{float(r['time_score']):.3f}</td>"
+                    f"<td><b>{float(r['final_score']):.3f}</b></td>"
+                    f"<td>{esc(r['confidence'])}</td>"
+                    "</tr>"
+                )
+
+            params_pretty = esc(json.dumps(asdict(params), indent=2))
+
+            html = f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>STL-PA Report</title>
+  <style>
+    body {{ font-family: Arial, Helvetica, sans-serif; margin: 24px; }}
+    h1,h2 {{ margin: 0.2em 0; }}
+    .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }}
+    .card {{ border: 1px solid #ddd; border-radius: 10px; padding: 14px; }}
+    pre {{ background:#f7f7f7; padding: 12px; border-radius: 8px; overflow:auto; }}
+    table {{ border-collapse: collapse; width: 100%; font-size: 13px; }}
+    th, td {{ border: 1px solid #ddd; padding: 6px 8px; vertical-align: top; }}
+    th {{ background:#f2f2f2; text-align: left; }}
+    .muted {{ color:#555; }}
+    img {{ max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; }}
+    .small {{ font-size: 12px; }}
+  </style>
+</head>
+<body>
+  <h1>STL-PA Alignment Report</h1>
+  <p class="muted small">
+    Generated at: {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}
+  </p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Summary</h2>
+      <ul>
+        <li><b>Candidate pairs:</b> {n_pairs:,}</li>
+        <li><b>Samian sites:</b> {n_samian:,}</li>
+        <li><b>Avg candidates/site:</b> {avg_cands:.2f}</li>
+        <li><b>Confidence counts:</b> {esc(conf_counts)}</li>
+      </ul>
+      <h3>Parameters</h3>
+      <pre>{params_pretty}</pre>
+    </div>
+
+    <div class="card">
+      <h2>Plots</h2>
+      <p class="small muted">Files are referenced relatively (same output folder).</p>
+      <h3>Final score distribution</h3>
+      <img src="{prefix}_final_score_hist.jpg" alt="Histogram of STL-PA final scores"/>
+      <h3>Confidence class counts</h3>
+      <img src="{prefix}_confidence_counts.jpg" alt="Bar chart of confidence class counts"/>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;">
+    <h2>Top-1 matches (first 50 by score)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>samian_id</th>
+          <th>samian_label</th>
+          <th>pleiades_id</th>
+          <th>pleiades_label</th>
+          <th>distance_km</th>
+          <th>geo</th>
+          <th>string</th>
+          <th>time</th>
+          <th>final</th>
+          <th>conf</th>
+        </tr>
+      </thead>
+      <tbody>
+        {''.join(rows_html)}
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
+"""
+
+            report_path = out_dir / f"{prefix}_report.html"
+            report_path.write_text(html, encoding="utf-8")
+            log(f"Wrote HTML report: {report_path}")
+        except Exception as e:
+            log(f"HTML report skipped (failed): {e}")
+
 
 # ---------------------------------------------------------------------
 # CLI / Main
@@ -903,6 +1083,46 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=25,
         help="Max candidates per Samian site (default: 25).",
+    )
+
+    ap.add_argument(
+        "--adaptive-radius",
+        action="store_true",
+        help="Enable adaptive search radius: radius_km + adaptive_km_per_year*unc_interval_years.",
+    )
+    ap.add_argument(
+        "--adaptive-km-per-year",
+        type=float,
+        default=0.5,
+        help="Adaptive radius scale in km per year of unc_interval_years (default: 0.5).",
+    )
+    ap.add_argument(
+        "--adaptive-radius-cap-km",
+        type=float,
+        default=200.0,
+        help="Upper cap for adaptive radius in km (default: 200).",
+    )
+    ap.add_argument(
+        "--dynamic-weights",
+        action="store_true",
+        help='Enable dynamic fusion weights based on Pleiades max_accuracy_m ("2026+" variant).',
+    )
+    ap.add_argument(
+        "--dynamic-acc-km-scale",
+        type=float,
+        default=20.0,
+        help="Accuracy scale (km) where geo-weight approaches dynamic_w_geo_min (default: 20).",
+    )
+    ap.add_argument(
+        "--dynamic-w-geo-min",
+        type=float,
+        default=0.2,
+        help="Minimum geo weight when accuracy is large (default: 0.2).",
+    )
+    ap.add_argument(
+        "--no-html-report",
+        action="store_true",
+        help="Disable HTML report output.",
     )
     ap.add_argument(
         "--sigma-km",

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>STL-PA Report</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; margin: 24px; }
+    h1,h2 { margin: 0.2em 0; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 14px; }
+    pre { background:#f7f7f7; padding: 12px; border-radius: 8px; overflow:auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 13px; }
+    th, td { border: 1px solid #ddd; padding: 6px 8px; vertical-align: top; }
+    th { background:#f2f2f2; text-align: left; }
+    .muted { color:#555; }
+    img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; }
+    .small { font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>STL-PA Alignment Report</h1>
+  <p class="muted small">
+    Generated at: 2026-01-28 11:03:38
+  </p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Summary</h2>
+      <ul>
+        <li><b>Candidate pairs:</b> 5,833</li>
+        <li><b>Samian sites:</b> 239</li>
+        <li><b>Avg candidates/site:</b> 24.41</li>
+        <li><b>Confidence counts:</b> {'low': 5316, 'medium': 379, 'high': 138}</li>
+      </ul>
+      <h3>Parameters</h3>
+      <pre>{
+  &quot;radius_km&quot;: 50.0,
+  &quot;topk&quot;: 25,
+  &quot;adaptive_radius&quot;: false,
+  &quot;adaptive_km_per_year&quot;: 0.5,
+  &quot;adaptive_radius_cap_km&quot;: 200.0,
+  &quot;sigma_km&quot;: 20.0,
+  &quot;rough_penalty&quot;: 0.6,
+  &quot;dynamic_weights&quot;: false,
+  &quot;dynamic_acc_km_scale&quot;: 20.0,
+  &quot;dynamic_w_geo_min&quot;: 0.2,
+  &quot;w_geo&quot;: 0.5,
+  &quot;w_str&quot;: 0.3,
+  &quot;w_time&quot;: 0.2,
+  &quot;high_conf&quot;: 0.75,
+  &quot;medium_conf&quot;: 0.5,
+  &quot;html_report&quot;: true
+}</pre>
+    </div>
+
+    <div class="card">
+      <h2>Plots</h2>
+      <p class="small muted">Files are referenced relatively (same output folder).</p>
+      <h3>Final score distribution</h3>
+      <img src="stlpa_final_score_hist.jpg" alt="Histogram of STL-PA final scores"/>
+      <h3>Confidence class counts</h3>
+      <img src="stlpa_confidence_counts.jpg" alt="Bar chart of confidence class counts"/>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;">
+    <h2>Top-1 matches (first 50 by score)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>samian_id</th>
+          <th>samian_label</th>
+          <th>pleiades_id</th>
+          <th>pleiades_label</th>
+          <th>distance_km</th>
+          <th>geo</th>
+          <th>string</th>
+          <th>time</th>
+          <th>final</th>
+          <th>conf</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>129</td><td>Holzhausen</td><td><a href='https://pleiades.stoa.org/places/109050'>109050</a></td><td>Holzhausen</td><td>0.040</td><td>0.999</td><td>1.000</td><td>0.175</td><td><b>0.834</b></td><td>high</td></tr><tr><td>169</td><td>Niederbieber</td><td><a href='https://pleiades.stoa.org/places/109208'>109208</a></td><td>Niederbieber</td><td>0.000</td><td>1.000</td><td>1.000</td><td>0.168</td><td><b>0.834</b></td><td>high</td></tr><tr><td>137</td><td>Jagsthausen</td><td><a href='https://pleiades.stoa.org/places/118769'>118769</a></td><td>Jagsthausen</td><td>0.026</td><td>0.999</td><td>1.000</td><td>0.111</td><td><b>0.822</b></td><td>high</td></tr><tr><td>1</td><td>Aalen</td><td><a href='https://pleiades.stoa.org/places/118537'>118537</a></td><td>Aalen</td><td>0.169</td><td>0.992</td><td>1.000</td><td>0.128</td><td><b>0.822</b></td><td>high</td></tr><tr><td>151</td><td>Lorch</td><td><a href='https://pleiades.stoa.org/places/118814'>118814</a></td><td>Lorch</td><td>0.080</td><td>0.996</td><td>1.000</td><td>0.106</td><td><b>0.819</b></td><td>high</td></tr><tr><td>161</td><td>Murrhardt</td><td><a href='https://pleiades.stoa.org/places/118854'>118854</a></td><td>Murrhardt</td><td>0.172</td><td>0.992</td><td>1.000</td><td>0.113</td><td><b>0.818</b></td><td>high</td></tr><tr><td>7</td><td>Arnsburg</td><td><a href='https://pleiades.stoa.org/places/118575'>118575</a></td><td>Arnsburg</td><td>0.037</td><td>0.999</td><td>1.000</td><td>0.090</td><td><b>0.818</b></td><td>high</td></tr><tr><td>118</td><td>Heddesdorf</td><td><a href='https://pleiades.stoa.org/places/109035'>109035</a></td><td>Heddesdorf</td><td>0.204</td><td>0.995</td><td>1.000</td><td>0.096</td><td><b>0.817</b></td><td>high</td></tr><tr><td>56</td><td>Cardean</td><td><a href='https://pleiades.stoa.org/places/89297'>89297</a></td><td>Tameia?</td><td>2.896</td><td>1.000</td><td>1.000</td><td>0.082</td><td><b>0.816</b></td><td>high</td></tr><tr><td>13</td><td>Baden-Baden</td><td><a href='https://pleiades.stoa.org/places/108748'>108748</a></td><td>Aquae</td><td>0.000</td><td>1.000</td><td>1.000</td><td>0.079</td><td><b>0.816</b></td><td>high</td></tr><tr><td>39</td><td>Brougham</td><td><a href='https://pleiades.stoa.org/places/89127'>89127</a></td><td>Brocavum</td><td>0.152</td><td>0.993</td><td>1.000</td><td>0.088</td><td><b>0.814</b></td><td>high</td></tr><tr><td>206</td><td>Stockstadt</td><td><a href='https://pleiades.stoa.org/places/118976'>118976</a></td><td>Stockstadt</td><td>0.238</td><td>0.989</td><td>1.000</td><td>0.094</td><td><b>0.813</b></td><td>high</td></tr><tr><td>146</td><td>Langenhain</td><td><a href='https://pleiades.stoa.org/places/109100'>109100</a></td><td>Langenhain</td><td>0.553</td><td>0.973</td><td>1.000</td><td>0.129</td><td><b>0.812</b></td><td>high</td></tr><tr><td>98</td><td>Fishbourne</td><td><a href='https://pleiades.stoa.org/places/79466'>79466</a></td><td>Fishbourne</td><td>0.289</td><td>0.987</td><td>1.000</td><td>0.093</td><td><b>0.812</b></td><td>high</td></tr><tr><td>31</td><td>Bothwellhaugh</td><td><a href='https://pleiades.stoa.org/places/463220209'>463220209</a></td><td>Bothwellhaugh</td><td>0.222</td><td>0.990</td><td>1.000</td><td>0.084</td><td><b>0.812</b></td><td>high</td></tr><tr><td>5</td><td>Alcester</td><td><a href='https://pleiades.stoa.org/places/79288'>79288</a></td><td>Alauna</td><td>3.480</td><td>1.000</td><td>1.000</td><td>0.059</td><td><b>0.812</b></td><td>high</td></tr><tr><td>154</td><td>Mainhardt</td><td><a href='https://pleiades.stoa.org/places/118829'>118829</a></td><td>Mainhardt</td><td>0.298</td><td>0.986</td><td>1.000</td><td>0.093</td><td><b>0.811</b></td><td>high</td></tr><tr><td>97</td><td>Fishbourne</td><td><a href='https://pleiades.stoa.org/places/79466'>79466</a></td><td>Fishbourne</td><td>0.289</td><td>0.987</td><td>1.000</td><td>0.090</td><td><b>0.811</b></td><td>high</td></tr><tr><td>33</td><td>Bowness-on-Solway</td><td><a href='https://pleiades.stoa.org/places/89239'>89239</a></td><td>Maia</td><td>0.236</td><td>0.998</td><td>1.000</td><td>0.058</td><td><b>0.811</b></td><td>high</td></tr><tr><td>4</td><td>Albertfalva</td><td><a href='https://pleiades.stoa.org/places/197100'>197100</a></td><td>Albertfalva</td><td>0.363</td><td>0.987</td><td>1.000</td><td>0.083</td><td><b>0.810</b></td><td>high</td></tr><tr><td>89</td><td>Echzell</td><td><a href='https://pleiades.stoa.org/places/118657'>118657</a></td><td>Echzell</td><td>0.139</td><td>0.994</td><td>1.000</td><td>0.064</td><td><b>0.810</b></td><td>high</td></tr><tr><td>197</td><td>Rottweil</td><td><a href='https://pleiades.stoa.org/places/118572'>118572</a></td><td>Arae Flaviae</td><td>0.138</td><td>0.994</td><td>1.000</td><td>0.063</td><td><b>0.809</b></td><td>high</td></tr><tr><td>210</td><td>Tác</td><td><a href='https://pleiades.stoa.org/places/197287'>197287</a></td><td>Gorsium/Herculia</td><td>0.027</td><td>1.000</td><td>1.000</td><td>0.047</td><td><b>0.809</b></td><td>high</td></tr><tr><td>127</td><td>Hofheim</td><td><a href='https://pleiades.stoa.org/places/109047'>109047</a></td><td>Hofheim</td><td>0.292</td><td>0.986</td><td>1.000</td><td>0.077</td><td><b>0.808</b></td><td>high</td></tr><tr><td>3</td><td>Aislingen</td><td><a href='https://pleiades.stoa.org/places/118549'>118549</a></td><td>Aislingen</td><td>0.299</td><td>0.986</td><td>1.000</td><td>0.077</td><td><b>0.808</b></td><td>high</td></tr><tr><td>74</td><td>Chester</td><td><a href='https://pleiades.stoa.org/places/79420'>79420</a></td><td>Deva</td><td>0.000</td><td>1.000</td><td>1.000</td><td>0.039</td><td><b>0.808</b></td><td>high</td></tr><tr><td>96</td><td>Feldberg</td><td><a href='https://pleiades.stoa.org/places/108979'>108979</a></td><td>Feldberg</td><td>0.005</td><td>1.000</td><td>1.000</td><td>0.038</td><td><b>0.808</b></td><td>high</td></tr><tr><td>46</td><td>Caerhûn</td><td><a href='https://pleiades.stoa.org/places/79542'>79542</a></td><td>Kanovium/Conovium</td><td>0.091</td><td>0.996</td><td>1.000</td><td>0.047</td><td><b>0.808</b></td><td>high</td></tr><tr><td>61</td><td>Carrawburgh</td><td><a href='https://pleiades.stoa.org/places/89128'>89128</a></td><td>*Brocolitia</td><td>0.051</td><td>0.998</td><td>1.000</td><td>0.042</td><td><b>0.807</b></td><td>high</td></tr><tr><td>23</td><td>Benwell</td><td><a href='https://pleiades.stoa.org/places/89150'>89150</a></td><td>Condercum</td><td>0.278</td><td>0.996</td><td>1.000</td><td>0.046</td><td><b>0.807</b></td><td>high</td></tr><tr><td>207</td><td>Strageath</td><td><a href='https://pleiades.stoa.org/places/89293'>89293</a></td><td>Strageath</td><td>0.064</td><td>1.000</td><td>1.000</td><td>0.036</td><td><b>0.807</b></td><td>high</td></tr><tr><td>181</td><td>Osterburken</td><td><a href='https://pleiades.stoa.org/places/118898'>118898</a></td><td>Osterburken</td><td>0.618</td><td>0.971</td><td>1.000</td><td>0.107</td><td><b>0.807</b></td><td>high</td></tr><tr><td>236</td><td>York</td><td><a href='https://pleiades.stoa.org/places/89175'>89175</a></td><td>Eburacum</td><td>1.003</td><td>1.000</td><td>1.000</td><td>0.033</td><td><b>0.807</b></td><td>high</td></tr><tr><td>55</td><td>Cappuck</td><td><a href='https://pleiades.stoa.org/places/104728999'>104728999</a></td><td>Cappuck</td><td>0.578</td><td>0.972</td><td>1.000</td><td>0.099</td><td><b>0.806</b></td><td>high</td></tr><tr><td>152</td><td>Loudoun Hill</td><td><a href='https://pleiades.stoa.org/places/264399135'>264399135</a></td><td>Loudoun Hill</td><td>0.247</td><td>0.988</td><td>1.000</td><td>0.059</td><td><b>0.806</b></td><td>high</td></tr><tr><td>57</td><td>Cardiff</td><td><a href='https://pleiades.stoa.org/places/79706'>79706</a></td><td>Tamion?</td><td>0.241</td><td>0.993</td><td>1.000</td><td>0.047</td><td><b>0.806</b></td><td>high</td></tr><tr><td>177</td><td>Old Carlisle</td><td><a href='https://pleiades.stoa.org/places/89236'>89236</a></td><td>‘Maglone’</td><td>0.086</td><td>0.996</td><td>1.000</td><td>0.037</td><td><b>0.805</b></td><td>high</td></tr><tr><td>106</td><td>Great Chesters</td><td><a href='https://pleiades.stoa.org/places/89095'>89095</a></td><td>(A)Esica</td><td>0.155</td><td>0.993</td><td>1.000</td><td>0.044</td><td><b>0.805</b></td><td>high</td></tr><tr><td>47</td><td>Caerleon</td><td><a href='https://pleiades.stoa.org/places/79532'>79532</a></td><td>Isca Silurum</td><td>0.136</td><td>0.993</td><td>1.000</td><td>0.038</td><td><b>0.804</b></td><td>high</td></tr><tr><td>45</td><td>Cadder</td><td><a href='https://pleiades.stoa.org/places/89130'>89130</a></td><td>Cadder</td><td>0.692</td><td>0.966</td><td>1.000</td><td>0.105</td><td><b>0.804</b></td><td>high</td></tr><tr><td>125</td><td>Hesselbach</td><td><a href='https://pleiades.stoa.org/places/118741'>118741</a></td><td>Hesselbach</td><td>0.155</td><td>0.993</td><td>1.000</td><td>0.038</td><td><b>0.804</b></td><td>high</td></tr><tr><td>226</td><td>Walldürn</td><td><a href='https://pleiades.stoa.org/places/119043'>119043</a></td><td>Walldürn</td><td>0.617</td><td>0.970</td><td>1.000</td><td>0.093</td><td><b>0.804</b></td><td>high</td></tr><tr><td>11</td><td>Bad Nauheim</td><td><a href='https://pleiades.stoa.org/places/118588'>118588</a></td><td>Bad Nauheim</td><td>0.491</td><td>0.976</td><td>1.000</td><td>0.077</td><td><b>0.804</b></td><td>high</td></tr><tr><td>238</td><td>Zugmantel</td><td><a href='https://pleiades.stoa.org/places/109472'>109472</a></td><td>Zugmantel</td><td>0.187</td><td>0.991</td><td>1.000</td><td>0.039</td><td><b>0.803</b></td><td>high</td></tr><tr><td>149</td><td>London</td><td><a href='https://pleiades.stoa.org/places/79574'>79574</a></td><td>Londinium/Augusta</td><td>0.209</td><td>0.990</td><td>1.000</td><td>0.040</td><td><b>0.803</b></td><td>high</td></tr><tr><td>157</td><td>Marköbel</td><td><a href='https://pleiades.stoa.org/places/118834'>118834</a></td><td>Marköbel</td><td>0.625</td><td>0.970</td><td>1.000</td><td>0.091</td><td><b>0.803</b></td><td>high</td></tr><tr><td>105</td><td>Great Casterton</td><td><a href='https://pleiades.stoa.org/places/79487'>79487</a></td><td>Great Casterton</td><td>0.003</td><td>1.000</td><td>1.000</td><td>0.015</td><td><b>0.803</b></td><td>high</td></tr><tr><td>30</td><td>Böbingen</td><td><a href='https://pleiades.stoa.org/places/118601'>118601</a></td><td>Böbingen</td><td>0.564</td><td>0.973</td><td>1.000</td><td>0.083</td><td><b>0.803</b></td><td>high</td></tr><tr><td>182</td><td>Papcastle</td><td><a href='https://pleiades.stoa.org/places/89165'>89165</a></td><td>Derventio</td><td>0.086</td><td>0.996</td><td>1.000</td><td>0.022</td><td><b>0.802</b></td><td>high</td></tr><tr><td>27</td><td>Birdoswald</td><td><a href='https://pleiades.stoa.org/places/89109'>89109</a></td><td>Banna</td><td>0.242</td><td>0.989</td><td>1.000</td><td>0.038</td><td><b>0.802</b></td><td>high</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
