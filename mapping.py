@@ -648,12 +648,12 @@ class STLPAParams:
 
     # Fusion weights (base)
     w_geo: float = 0.5
-    w_str: float = 0.3
-    w_time: float = 0.2
+    w_str: float = 0.4
+    w_time: float = 0.1
 
     # Confidence thresholds
     high_conf: float = 0.75
-    medium_conf: float = 0.50
+    medium_conf: float = 0.40
 
     # Reporting
     html_report: bool = True
@@ -787,15 +787,47 @@ def run_stlpa(
             w_geo_l, w_str_l, w_time_l = dynamic_fusion_weights(
                 w_geo, w_str, w_time, acc_km, p
             )
-            final = (w_geo_l * geo) + (w_str_l * str_sc) + (w_time_l * t_sc)
 
-            candidates.append((j, d_km, d_eff, geo, str_sc, t_sc, final))
+            geo_contrib = w_geo_l * geo
+            str_contrib = w_str_l * str_sc
+            time_contrib = w_time_l * t_sc
+            final = geo_contrib + str_contrib + time_contrib
+
+            candidates.append(
+                (
+                    j,
+                    d_km,
+                    d_eff,
+                    geo,
+                    str_sc,
+                    t_sc,
+                    w_geo_l,
+                    w_str_l,
+                    w_time_l,
+                    geo_contrib,
+                    str_contrib,
+                    time_contrib,
+                    final,
+                )
+            )
 
         candidates.sort(key=lambda x: x[-1], reverse=True)
 
-        for rank, (j, d_km, d_eff, geo, str_sc, t_sc, final) in enumerate(
-            candidates, start=1
-        ):
+        for rank, (
+            j,
+            d_km,
+            d_eff,
+            geo,
+            str_sc,
+            t_sc,
+            w_geo_l,
+            w_str_l,
+            w_time_l,
+            geo_contrib,
+            str_contrib,
+            time_contrib,
+            final,
+        ) in enumerate(candidates, start=1):
             out_rows.append(
                 {
                     "samian_id": s_id,
@@ -827,6 +859,12 @@ def run_stlpa(
                     "geo_score": float(geo),
                     "string_score": float(str_sc),
                     "time_score": float(t_sc),
+                    "w_geo": float(w_geo_l),
+                    "w_str": float(w_str_l),
+                    "w_time": float(w_time_l),
+                    "geo_contrib": float(geo_contrib),
+                    "string_contrib": float(str_contrib),
+                    "time_contrib": float(time_contrib),
                     "final_score": float(final),
                     "rank": int(rank),
                     "confidence": confidence_label(float(final), p),
@@ -873,6 +911,12 @@ def write_outputs(
                     "geo_score": r["geo_score"],
                     "string_score": r["string_score"],
                     "time_score": r["time_score"],
+                    "w_geo": r.get("w_geo"),
+                    "w_str": r.get("w_str"),
+                    "w_time": r.get("w_time"),
+                    "geo_contrib": r.get("geo_contrib"),
+                    "string_contrib": r.get("string_contrib"),
+                    "time_contrib": r.get("time_contrib"),
                     "distance_km": r["distance_km"],
                     "confidence": r["confidence"],
                     "rank": int(r["rank"]),
@@ -926,6 +970,66 @@ def write_outputs(
         plt.close(fig)
         log(f"Wrote plot: {fig_path}")
 
+        # -------------------------------------------------------------
+        # Extra diagnostic plots for Top-1 matches (JPG 300 DPI)
+        # -------------------------------------------------------------
+        top1_sorted = top1.sort_values("final_score", ascending=False).copy()
+
+        # Histogram: Top-1 final scores
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.hist(top1_sorted["final_score"].astype(float).to_numpy(), bins=20)
+        ax.set_xlabel("final_score")
+        ax.set_ylabel("count")
+        ax.set_title("STL-PA Top-1: distribution of final scores")
+        fig_path = out_dir / f"{prefix}_top1_final_score_hist.jpg"
+        fig.savefig(fig_path, dpi=300, bbox_inches="tight")
+        plt.close(fig)
+        log(f"Wrote plot: {fig_path}")
+
+        # Scatter: component contribution vs final_score (Top-1)
+        for col in ["geo_contrib", "string_contrib", "time_contrib"]:
+            if col not in top1_sorted.columns:
+                continue
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ax.scatter(
+                top1_sorted[col].astype(float).to_numpy(),
+                top1_sorted["final_score"].astype(float).to_numpy(),
+            )
+            ax.set_xlabel(col)
+            ax.set_ylabel("final_score")
+            ax.set_title(f"STL-PA Top-1: {col} vs final_score")
+            fig_path = out_dir / f"{prefix}_top1_{col}_vs_final.jpg"
+            fig.savefig(fig_path, dpi=300, bbox_inches="tight")
+            plt.close(fig)
+            log(f"Wrote plot: {fig_path}")
+
+        # Score stack (Top-1): stacked contributions by rank (no labels; too many)
+        if all(
+            c in top1_sorted.columns
+            for c in ["geo_contrib", "string_contrib", "time_contrib"]
+        ):
+            x = list(range(len(top1_sorted)))
+            geo = top1_sorted["geo_contrib"].astype(float).to_numpy()
+            scc = top1_sorted["string_contrib"].astype(float).to_numpy()
+            tim = top1_sorted["time_contrib"].astype(float).to_numpy()
+
+            fig = plt.figure(figsize=(10, 4))
+            ax = fig.add_subplot(111)
+            ax.bar(x, geo, label="geo_contrib")
+            ax.bar(x, scc, bottom=geo, label="string_contrib")
+            ax.bar(x, tim, bottom=geo + scc, label="time_contrib")
+            ax.set_xlabel("top1_rank (sorted by final_score)")
+            ax.set_ylabel("score contribution")
+            ax.set_title("STL-PA Top-1: score stack (geo/string/time)")
+            ax.set_xticks([])
+            ax.legend()
+            fig_path = out_dir / f"{prefix}_top1_score_stack.jpg"
+            fig.savefig(fig_path, dpi=300, bbox_inches="tight")
+            plt.close(fig)
+            log(f"Wrote plot: {fig_path}")
+
     except Exception as e:
         log(f"Plotting skipped (matplotlib not available or failed): {e}")
 
@@ -955,7 +1059,7 @@ def write_outputs(
                 )
 
             rows_html = []
-            for _, r in top1.head(50).iterrows():
+            for _, r in top1.iterrows():
                 rows_html.append(
                     "<tr>"
                     f"<td>{esc(r['samian_id'])}</td>"
@@ -1018,11 +1122,22 @@ def write_outputs(
       <img src="{prefix}_final_score_hist.jpg" alt="Histogram of STL-PA final scores"/>
       <h3>Confidence class counts</h3>
       <img src="{prefix}_confidence_counts.jpg" alt="Bar chart of confidence class counts"/>
+      <h3>Top-1 final score distribution</h3>
+      <img src="{prefix}_top1_final_score_hist.jpg" alt="Histogram of STL-PA top-1 final scores"/>
+      <h3>Top-1: geo contribution vs final score</h3>
+      <img src="{prefix}_top1_geo_contrib_vs_final.jpg" alt="Scatter of geo contribution vs final score (top-1)"/>
+      <h3>Top-1: string contribution vs final score</h3>
+      <img src="{prefix}_top1_string_contrib_vs_final.jpg" alt="Scatter of string contribution vs final score (top-1)"/>
+      <h3>Top-1: time contribution vs final score</h3>
+      <img src="{prefix}_top1_time_contrib_vs_final.jpg" alt="Scatter of time contribution vs final score (top-1)"/>
+      <h3>Top-1 score stack</h3>
+      <img src="{prefix}_top1_score_stack.jpg" alt="Stacked contributions (geo/string/time) for top-1 matches"/>
+
     </div>
   </div>
 
   <div class="card" style="margin-top:18px;">
-    <h2>Top-1 matches (first 50 by score)</h2>
+    <h2>Top-1 matches (all, sorted by score)</h2>
     <table>
       <thead>
         <tr>
