@@ -1,0 +1,25 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: samianresearch-stlpa
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Florian
+    family-names: Thiery
+    email: florian.thiery@leiza.de
+    orcid: "https://orcid.org/0000-0002-3246-3531"
+repository-code: >-
+  https://github.com/Research-Squirrel-Engineers/samianresearch-stlpa/
+url: >-
+  https://research-squirrel-engineers.github.io/samianresearch-stlpa/
+keywords:
+  - Pleiades
+  - Mapping
+  - Authority Data
+license: MIT
+version: v0.1
+date-released: "2026-01-28"
