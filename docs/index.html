@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>samianresearch-stlpa</title>
+  <meta name="description" content="STL-PA (Spatio-Temporal-Lexical Place Alignment) results and documentation for aligning SamianResearch sites with Pleiades." />
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --panel: #111827;
+      --panel2: #0f172a;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --link: #93c5fd;
+      --border: rgba(255,255,255,.10);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+      --max: 1100px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 600px at 20% -20%, rgba(147,197,253,.18), transparent 60%),
+                  radial-gradient(1000px 500px at 90% 0%, rgba(167,139,250,.12), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    a { color: var(--link); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header {
+      padding: 48px 20px 24px;
+    }
+    .wrap { max-width: var(--max); margin: 0 auto; }
+    .hero {
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(17,24,39,.85), rgba(15,23,42,.80));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px 28px 24px;
+    }
+    .kicker { color: var(--muted); font-size: 14px; letter-spacing: .03em; }
+    h1 { margin: 10px 0 8px; font-size: 40px; line-height: 1.1; }
+    .lead { margin: 0; color: #d1d5db; font-size: 16px; max-width: 75ch; }
+    nav {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin-top: 18px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .btn:hover { background: rgba(255,255,255,.07); text-decoration: none; }
+    main { padding: 10px 20px 52px; }
+    section {
+      margin-top: 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(17,24,39,.65);
+      box-shadow: 0 10px 24px rgba(0,0,0,.25);
+      overflow: hidden;
+    }
+    section .hd {
+      padding: 18px 22px;
+      background: rgba(15,23,42,.75);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    }
+    section .hd h2 { margin: 0; font-size: 18px; }
+    section .hd .hint { margin: 0; color: var(--muted); font-size: 13px; }
+    section .bd { padding: 18px 22px 22px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+    }
+    .card {
+      grid-column: span 6;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255,255,255,.03);
+      padding: 14px 14px 12px;
+    }
+    .card h3 { margin: 0 0 6px; font-size: 15px; }
+    .card p { margin: 0; color: var(--muted); font-size: 13px; }
+    .list { margin: 10px 0 0; padding-left: 18px; color: #d1d5db; }
+    .list li { margin: 6px 0; }
+    figure {
+      margin: 0;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(0,0,0,.15);
+    }
+    figure img { display: block; width: 100%; height: auto; }
+    figcaption {
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+    .cols {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 14px;
+      align-items: start;
+    }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    pre {
+      padding: 12px 14px;
+      background: rgba(0,0,0,.25);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: auto;
+      margin: 10px 0 0;
+      color: #e5e7eb;
+    }
+    footer {
+      padding: 20px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+    @media (max-width: 860px) {
+      .cols { grid-template-columns: 1fr; }
+      .card { grid-column: span 12; }
+      h1 { font-size: 32px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="hero">
+        <div class="kicker">STL-PA · SamianResearch ↔ Pleiades</div>
+        <h1>samianresearch-stlpa</h1>
+        <p class="lead">
+          STL-PA (Spatio-Temporal-Lexical Place Alignment) is a transparent, weighted method to align archaeological
+          site references from SamianResearch with Pleiades place identifiers using spatial, lexical, and temporal evidence.
+        </p>
+        <nav aria-label="Primary">
+          <a class="btn" href="stlpa_report.html" title="Open the compact run report">📊 Report (HTML)</a>
+          <a class="btn" href="stlpa_summary.html" title="Open per-site candidate summaries">🧾 Summary (HTML)</a>
+          <a class="btn" href="stlpa_top1.csv" title="Download top-1 matches CSV">⬇️ Top‑1 CSV</a>
+          <a class="btn" href="stlpa_candidates_scored.csv" title="Download scored candidates CSV">⬇️ Candidates CSV</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+
+      <section id="intro">
+        <div class="hd">
+          <h2>Introduction</h2>
+          <p class="hint">Context and motivation</p>
+        </div>
+        <div class="bd">
+          <p>
+            <strong>samianresearch-stlpa</strong> implements <em>STL-PA</em> (Spatio-Temporal-Lexical Place Alignment), a semi-automatic
+            method for aligning archaeological site references from the <em>SamianResearch</em> dataset with places in the
+            <em>Pleiades</em> gazetteer.
+          </p>
+          <p>
+            The approach is intended for research settings where place references can be uncertain, fuzzy, or historically ambiguous.
+            STL-PA combines <strong>spatial proximity</strong>, <strong>lexical similarity</strong>, and <strong>temporal overlap</strong>
+            into an explicit scoring model, supporting evaluation against manually curated links and producing both machine-readable
+            outputs and human-readable reports.
+          </p>
+          <p class="kicker" style="margin-top:12px;">
+            Working Paper: <a href="https://github.com/squirrelpapers/SqP-8-1-1-SamianResearchSites--STL-PA">SqP‑8‑1‑1 (SamianResearchSites — STL‑PA)</a>
+          </p>
+        </div>
+      </section>
+
+      <section id="method">
+        <div class="hd">
+          <h2>Method</h2>
+          <p class="hint">STL‑PA overview and scoring components</p>
+        </div>
+        <div class="bd">
+          <div class="cols">
+            <div>
+              <div class="grid">
+                <div class="card">
+                  <h3>1) Normalise & build views</h3>
+                  <p>Build consistent Samian and Pleiades views (labels, coordinates, time spans, uncertainty, spatial accuracy).</p>
+                </div>
+                <div class="card">
+                  <h3>2) Candidate generation</h3>
+                  <p>Vectorised haversine distance + radius filter (optionally adaptive) with Top‑K fallback.</p>
+                </div>
+                <div class="card">
+                  <h3>3) Scoring</h3>
+                  <p>Compute Geo / String / Time scores per candidate pair, including accuracy and uncertainty handling.</p>
+                </div>
+                <div class="card">
+                  <h3>4) Fusion & ranking</h3>
+                  <p>Weighted fusion into a final score, rank candidates per site, assign confidence classes; optional manual evaluation.</p>
+                </div>
+              </div>
+
+              <pre><code>final = w_geo * geo + w_str * string + w_time * time</code></pre>
+
+              <ul class="list">
+                <li><strong>Geo:</strong> exp-decay on distance, corrected by Pleiades <code>max_accuracy_m</code>, rough-location penalty.</li>
+                <li><strong>String:</strong> maximum lexical similarity over labels and alternative names (penalised alt–alt).</li>
+                <li><strong>Time:</strong> normalised interval overlap including uncertainty, weighted by <code>q_interval</code>.</li>
+              </ul>
+            </div>
+
+            <figure>
+              <img src="info/flowchart.png" alt="STL-PA workflow flowchart" />
+              <figcaption>STL‑PA workflow. Image path is relative to the docs root: <code>info/flowchart.png</code>.</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section id="data">
+        <div class="hd">
+          <h2>Data</h2>
+          <p class="hint">Inputs used to build the views</p>
+        </div>
+        <div class="bd">
+          <div class="grid">
+            <div class="card">
+              <h3>SamianResearch</h3>
+              <p>Sites with identifiers, labels, coordinates, chronology, and uncertainty.</p>
+              <ul class="list">
+                <li><code>samianresearch.csv</code></li>
+                <li><code>samianresearch_pleiades.csv</code> (optional manual links for evaluation)</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Pleiades</h3>
+              <p>Gazetteer export combined into a single place view (names, coordinates, temporal coverage, accuracy).</p>
+              <ul class="list">
+                <li><code>places.csv</code>, <code>names.csv</code>, <code>location_points.csv</code></li>
+                <li><code>places_accuracy.csv</code></li>
+                <li><code>time_periods.csv</code> (optional temporal normalisation)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="results">
+        <div class="hd">
+          <h2>Results</h2>
+          <p class="hint">Run outputs as static HTML</p>
+        </div>
+        <div class="bd">
+          <p>
+            A full run produces static HTML pages for inspection and review:
+          </p>
+          <ul class="list">
+            <li><a href="stlpa_report.html"><strong>STL‑PA Report</strong></a> — compact overview focusing on Top‑1 matches and score contributions.</li>
+            <li><a href="stlpa_summary.html"><strong>STL‑PA Summary</strong></a> — per‑site candidate tables with parameters and ranked matches.</li>
+          </ul>
+          <p class="kicker" style="margin-top: 12px;">
+            Tip: if you publish via GitHub Pages (docs/), these links resolve from the site root automatically.
+          </p>
+        </div>
+      </section>
+
+      <section id="outputs">
+        <div class="hd">
+          <h2>Output files</h2>
+          <p class="hint">Key artefacts created by the pipeline</p>
+        </div>
+        <div class="bd">
+          <ul class="list">
+            <li><code>stlpa_candidates_scored.csv</code> — all evaluated candidate pairs with score components and final scores.</li>
+            <li><code>stlpa_top1.csv</code> — the top-ranked Pleiades match per Samian site.</li>
+            <li><code>stlpa_summary.json</code> — structured per-site summaries (parameters + ranked candidates).</li>
+            <li><code>stlpa_summary.html</code> — human-readable rendering of the summary JSON.</li>
+            <li><code>stlpa_report.html</code> — compact analytical report with Top‑1 contribution plots.</li>
+            <li><code>stlpa_manual_eval.csv</code> and <code>stlpa_manual_eval_summary.json</code> — only if manual mappings are provided.</li>
+          </ul>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    Built from the project README (docs landing page). Make sure <code>info/flowchart.png</code> is present in the same <code>docs/</code> tree.
+  </footer>
+</body>
+</html>
